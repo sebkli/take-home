@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import mockJson from "./mock.json";
+import { useQuery } from '@tanstack/react-query';
+import mockJson from './mock.json';
 
 export type ListItem = {
   id: number;
@@ -8,24 +8,27 @@ export type ListItem = {
   isVisible: boolean;
 };
 
-export type DeletedListItem = Omit<ListItem, "description">;
+export type DeletedListItem = Omit<ListItem, 'description'>;
 
 export const useGetListData = () => {
   const query = useQuery({
-    queryKey: ["list"],
+    queryKey: ['list'],
     queryFn: async () => {
       await sleep(1000);
 
       if (getRandom() > 85) {
-        console.error("An unexpected error occurred!");
-        throw new Error("👀");
+        console.error('An unexpected error occurred!');
+        throw new Error('👀');
       }
 
-      const mockData = mockJson as Omit<ListItem, "isVisible">[];
+      const mockData = mockJson as Omit<ListItem, 'isVisible'>[];
 
       return shuffle(mockData).map((item) => {
         return { ...item, isVisible: getRandom() > 50 ? true : false };
       });
+      //  .filter((item) => item.isVisible) ?? []
+      // I think that the filtering could be done here instead of in the useEffect
+      // but I assume this function simulates different responses and errors and should not be edited at all
     },
   });
 

@@ -1,26 +1,23 @@
-import { FC } from "react";
-import { ListItem } from "../api/getListData";
-import { DeleteButton, ExpandButton } from "./Buttons";
-import { ChevronUpIcon } from "./icons";
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { FC } from 'react';
 
-type CardProps = {
-  title: ListItem["title"];
-  description: ListItem["description"];
+import { Card, DeletedCard } from './Card';
+
+type ListProps = {
+  cards: Card[] | DeletedCard[];
 };
 
-export const Card: FC<CardProps> = ({ title, description }) => {
+export const List: FC<ListProps> = ({ cards }) => {
+  const [cardRef] = useAutoAnimate<HTMLDivElement>();
+
   return (
-    <div className="border border-black px-2 py-1.5">
-      <div className="flex justify-between mb-0.5">
-        <h1 className="font-medium">{title}</h1>
-        <div className="flex">
-          <ExpandButton>
-            <ChevronUpIcon />
-          </ExpandButton>
-          <DeleteButton />
-        </div>
-      </div>
-      <p className="text-sm">{description}</p>
+    <div className="flex flex-col gap-y-3" ref={cardRef}>
+      {cards.map((card) => (
+        <Card key={card.id} card={card} />
+      ))}
+      {cards.length === 0 && (
+        <h2 className="mb-1 font-medium text-lg">This list is empty</h2>
+      )}
     </div>
   );
 };

@@ -1,52 +1,87 @@
-import { useEffect, useState } from "react";
-import { ListItem, useGetListData } from "../api/getListData";
-import { Card } from "./List";
-import { Spinner } from "./Spinner";
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { useStore } from '../store';
+
+import { useGetListData } from '../api/getListData';
+import { Button, ToggleButton } from './Buttons';
+import { List } from './List';
+import { Spinner } from './Spinner';
 
 export const Entrypoint = () => {
-  const [visibleCards, setVisibleCards] = useState<ListItem[]>([]);
   const listQuery = useGetListData();
+  const {
+    cards,
+    deletedCards,
+    initializeCards,
+    showDeletedCards,
+    toggleShowDeletedCards,
+  } = useStore(
+    useShallow((state) => ({
+      cards: state.cards,
+      deletedCards: state.deletedCards,
+      initializeCards: state.initializeCards,
+      showDeletedCards: state.showDeletedCards,
+      toggleShowDeletedCards: state.toggleShowDeletedCards,
+    }))
+  );
 
-  // TOOD
-  // const deletedCards: DeletedListItem[] = [];
+  const [listRef] = useAutoAnimate<HTMLDivElement>();
 
   useEffect(() => {
-    if (listQuery.isLoading) {
-      return;
+    if (!listQuery.isLoading) {
+      const data = listQuery.data?.filter((item) => item.isVisible) ?? [];
+      initializeCards(data);
     }
-
-    setVisibleCards(listQuery.data?.filter((item) => item.isVisible) ?? []);
-  }, [listQuery.data, listQuery.isLoading]);
+  }, [listQuery.data, listQuery.isLoading, initializeCards]);
 
   if (listQuery.isLoading) {
     return <Spinner />;
   }
 
-  return (
-    <div className="flex gap-x-16">
-      <div className="w-full max-w-xl">
-        <h1 className="mb-1 font-medium text-lg">My Awesome List ({visibleCards.length})</h1>
-        <div className="flex flex-col gap-y-3">
-          {visibleCards.map((card) => (
-            <Card key={card.id} title={card.title} description={card.description} />
-          ))}
-        </div>
+  if (listQuery.isError) {
+    return (
+      <div className="flex flex-col gap-1">
+        <h1 className="font-medium text-lg">Something went wrong</h1>
+        <Button className="self-center">Retry</Button>
       </div>
-      <div className="w-full max-w-xl">
+    );
+  }
+
+  return (
+    <div className="flex gap-x-16 w-full max-w-5xl">
+      <div className="w-full max-w-xl" ref={listRef}>
         <div className="flex items-center justify-between">
-          <h1 className="mb-1 font-medium text-lg">Deleted Cards (0)</h1>
-          <button
-            disabled
-            className="text-white text-sm transition-colors hover:bg-gray-800 disabled:bg-black/75 bg-black rounded px-3 py-1"
+          <h1 className="mb-1 font-medium text-lg">
+            My Awesome List ({cards.length})
+          </h1>
+          <ToggleButton onText="On" offText="Off" />
+        </div>
+        <List cards={cards} />
+      </div>
+      <div className="w-full max-w-xl" ref={listRef}>
+        <div className="flex items-center justify-between">
+          <h1 className="mb-1 font-medium text-lg">
+            Deleted Cards {deletedCards.length}
+          </h1>
+          <Button
+            onClick={() => {
+              listQuery.refetch();
+            }}
+            disabled={listQuery.isFetching}
+          >
+            {listQuery.isFetching ? 'Loading' : 'Refetch'}
+          </Button>
+          <Button
+            disabled={deletedCards.length === 0}
+            onClick={() => {
+              toggleShowDeletedCards();
+            }}
           >
             Reveal
-          </button>
+          </Button>
         </div>
-        <div className="flex flex-col gap-y-3">
-          {/* {deletedCards.map((card) => (
-            <Card key={card.id} card={card} />
-          ))} */}
-        </div>
+        {showDeletedCards && <List cards={deletedCards} />}
       </div>
     </div>
   );
